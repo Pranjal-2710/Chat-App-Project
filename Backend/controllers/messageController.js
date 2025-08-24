@@ -82,6 +82,8 @@ export const markMessageAsSeen= async(req,res)=>{
     }
 }
 
+
+
 // Send message to selected user
 
 export const sendMessage = async(req,res)=>{
@@ -130,8 +132,7 @@ export const sendMessage = async(req,res)=>{
             text,
             image: imageUrl,
             voice: voiceUrl,
-            video: videoUrl,
-
+            video: videoUrl
         })
 
         //Emit new message to the receiver's socket

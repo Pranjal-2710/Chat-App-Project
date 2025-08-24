@@ -93,7 +93,8 @@ const CameraCapture = ({ onCapture, onClose }) => {
     // Convert canvas to base64
     const photoData = canvas.toDataURL('image/jpeg', 0.8);
     
-    onCapture({ image: photoData });
+    // Show preview instead of directly sending
+    onCapture({ image: photoData, showPreview: true });
     closeCamera();
   };
 
@@ -119,7 +120,8 @@ const CameraCapture = ({ onCapture, onClose }) => {
         const reader = new FileReader();
         
         reader.onloadend = () => {
-          onCapture({ video: reader.result });
+          // Show preview instead of directly sending
+          onCapture({ video: reader.result, showPreview: true });
           closeCamera();
         };
         

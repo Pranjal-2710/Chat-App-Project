@@ -13,6 +13,7 @@ import { AuthContext } from '../../context/Auth'
 import toast from 'react-hot-toast'
 import VoiceRecorder from './VoiceRecorder'
 import CameraCapture from './CameraCapture'
+import MediaPreview from './MediaPreview'
 const Container = () => {
 
   const {messages,selectedUser,setSelectedUser,sendMessage, getMessages}= useContext(ChatContext)
@@ -21,6 +22,7 @@ const Container = () => {
   const scrollEnd=useRef()
 
   const [input,setInput]= useState('')
+  const [mediaPreview, setMediaPreview] = useState(null)
 
   const handleSendMessage= async (e)=>{
     e.preventDefault()
@@ -51,8 +53,26 @@ const Container = () => {
   }
 
   const handleCameraCapture = async(captureData) => {
-    await sendMessage(captureData)
+    if (captureData.showPreview) {
+      // Show preview instead of sending directly
+      setMediaPreview(captureData)
+    } else {
+      // Direct send (for backward compatibility)
+      await sendMessage(captureData)
+    }
   }
+
+  const handleMediaSend = async(mediaData) => {
+    console.log('Sending media with data:', mediaData);
+    await sendMessage(mediaData)
+    setMediaPreview(null)
+  }
+
+  const handleMediaCancel = () => {
+    setMediaPreview(null)
+  }
+
+
 
   useEffect(()=>{
     if(selectedUser){
@@ -68,6 +88,13 @@ const Container = () => {
 
   return selectedUser? (
     <div className='h-full overflow-scroll relative backdrop-blur-lg'>
+      {mediaPreview && (
+        <MediaPreview
+          mediaData={mediaPreview}
+          onSend={handleMediaSend}
+          onCancel={handleMediaCancel}
+        />
+      )}
       <div className='flex items-center gap-3 py-3 mx-4 border-b border-stone-500'>
         <img src={selectedUser.profilePic || avatar} alt='' className='w-8 rounded-full' />
         <p className='flex-1 text-lg text-white flex items-center gap-2'>
@@ -84,8 +111,9 @@ const Container = () => {
         {messages.map((msg,index)=>(
           <div key={index} className={`flex items-end gap-2 justify-end ${msg.senderId!== authUser._id && 'flex-row-reverse'}`}>
             {msg.image ? (
-              <img src={msg.image} alt="" className='max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8
-              '/>
+              <div className="relative">
+                <img src={msg.image} alt="" className='max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8'/>
+              </div>
             ) : msg.voice ? (
               <div className={`p-2 max-w-[250px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
                 <audio 
@@ -101,14 +129,16 @@ const Container = () => {
               </div>
             ) : msg.video ? (
               <div className={`p-2 max-w-[300px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
-                <video 
-                  controls 
-                  className="w-full max-h-64 rounded-lg"
-                  preload="metadata"
-                  src={msg.video}
-                >
-                  Your browser does not support the video element.
-                </video>
+                <div className="relative">
+                  <video 
+                    controls 
+                    className="w-full max-h-64 rounded-lg"
+                    preload="metadata"
+                    src={msg.video}
+                  >
+                    Your browser does not support the video element.
+                  </video>
+                </div>
                 <p className="text-xs text-gray-400 mt-1">Video Message</p>
               </div>
             ) : (

@@ -10,7 +10,7 @@ export const ChatProvider=({children})=>{
     const [selectedUser,setSelectedUser]=useState(null)
     const [unseenMessages,setUnseenMessages]=useState({})
 
-    const{socket,axios}=useContext(AuthContext)
+    const{socket,axios,authUser}=useContext(AuthContext)
 
     //function to get all users for sidebar
     const getUsers= async()=>{
@@ -55,6 +55,8 @@ export const ChatProvider=({children})=>{
             toast.error(error.message)
         }
     }
+
+
 
     //function to subscribe to messages for selected user
     const subscribeToMessages =async()=>{
