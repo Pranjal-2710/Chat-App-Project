@@ -11,7 +11,7 @@ import send_button from '../assets/send_button.svg'
 import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/Auth'
 import toast from 'react-hot-toast'
-import VoiceRecorder from './VoiceRecorder'
+import VoiceRecorder from './VoiceRecorderSimple'
 const Container = () => {
 
   const {messages,selectedUser,setSelectedUser,sendMessage, getMessages}= useContext(ChatContext)
@@ -46,6 +46,7 @@ const Container = () => {
   }
 
   const handleSendVoice = async(voiceData) => {
+    console.log('Sending voice message:', voiceData);
     await sendMessage(voiceData)
   }
 
@@ -83,11 +84,14 @@ const Container = () => {
               '/>
             ) : msg.voice ? (
               <div className={`p-2 max-w-[250px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+                {console.log('Rendering voice message:', msg.voice)}
                 <audio 
                   controls 
                   className="w-full h-8"
                   style={{filter: 'invert(1)'}}
+                  preload="metadata"
                 >
+                  <source src={msg.voice} type="audio/webm" />
                   <source src={msg.voice} type="audio/wav" />
                   <source src={msg.voice} type="audio/mp3" />
                   <source src={msg.voice} type="audio/ogg" />

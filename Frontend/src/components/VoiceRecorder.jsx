@@ -6,11 +6,15 @@ const VoiceRecorder = ({ onSendVoice }) => {
 
   const handleSendVoice = (blobUrl, blob) => {
     if (blob) {
+      console.log('Voice blob received:', blob);
       const reader = new FileReader();
       reader.onloadend = () => {
+        console.log('Voice data converted to base64');
         onSendVoice({ voice: reader.result });
       };
       reader.readAsDataURL(blob);
+    } else {
+      console.error('No blob received');
     }
   };
 
@@ -18,31 +22,45 @@ const VoiceRecorder = ({ onSendVoice }) => {
     <ReactMediaRecorder
       audio
       onStop={(blobUrl, blob) => {
+        console.log('Recording stopped, status:', status, 'blob:', blob);
         setIsRecording(false);
-        handleSendVoice(blobUrl, blob);
+        if (blob) {
+          handleSendVoice(blobUrl, blob);
+        }
       }}
       render={({ status, startRecording, stopRecording, clearBlobUrl }) => (
         <div className="flex items-center">
           {status === "idle" && (
             <button
               onMouseDown={() => {
+                console.log('Starting recording...');
                 setIsRecording(true);
                 startRecording();
               }}
               onMouseUp={() => {
-                setIsRecording(false);
+                console.log('Stopping recording...');
                 stopRecording();
               }}
-              onTouchStart={() => {
+              onMouseLeave={() => {
+                // Handle case where user drags mouse away while recording
+                if (isRecording) {
+                  console.log('Mouse left while recording, stopping...');
+                  stopRecording();
+                }
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                console.log('Starting recording (touch)...');
                 setIsRecording(true);
                 startRecording();
               }}
-              onTouchEnd={() => {
-                setIsRecording(false);
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                console.log('Stopping recording (touch)...');
                 stopRecording();
               }}
               className={`p-2 rounded-full transition-all duration-200 ${
-                isRecording 
+                status === "recording" || isRecording
                   ? 'bg-red-500 scale-110' 
                   : 'bg-blue-500 hover:bg-blue-600'
               }`}
