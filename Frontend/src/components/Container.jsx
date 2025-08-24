@@ -13,6 +13,8 @@ import { AuthContext } from '../../context/Auth'
 import toast from 'react-hot-toast'
 import VoiceRecorder from './VoiceRecorder'
 import CameraCapture from './CameraCapture'
+import MediaPreview from './MediaPreview'
+import ViewOnceMessage from './ViewOnceMessage'
 const Container = () => {
 
   const {messages,selectedUser,setSelectedUser,sendMessage, getMessages}= useContext(ChatContext)
@@ -21,6 +23,7 @@ const Container = () => {
   const scrollEnd=useRef()
 
   const [input,setInput]= useState('')
+  const [mediaPreview, setMediaPreview] = useState(null)
 
   const handleSendMessage= async (e)=>{
     e.preventDefault()
@@ -51,7 +54,28 @@ const Container = () => {
   }
 
   const handleCameraCapture = async(captureData) => {
-    await sendMessage(captureData)
+    if (captureData.showPreview) {
+      // Show preview instead of sending directly
+      setMediaPreview(captureData)
+    } else {
+      // Direct send (for backward compatibility)
+      await sendMessage(captureData)
+    }
+  }
+
+  const handleMediaSend = async(mediaData) => {
+    await sendMessage(mediaData)
+    setMediaPreview(null)
+  }
+
+  const handleMediaCancel = () => {
+    setMediaPreview(null)
+  }
+
+  const handleViewOnceView = async(messageId) => {
+    // Handle view-once message viewed
+    // You can implement backend logic here to mark the message as viewed
+    console.log('View-once message viewed:', messageId)
   }
 
   useEffect(()=>{
@@ -68,6 +92,13 @@ const Container = () => {
 
   return selectedUser? (
     <div className='h-full overflow-scroll relative backdrop-blur-lg'>
+      {mediaPreview && (
+        <MediaPreview
+          mediaData={mediaPreview}
+          onSend={handleMediaSend}
+          onCancel={handleMediaCancel}
+        />
+      )}
       <div className='flex items-center gap-3 py-3 mx-4 border-b border-stone-500'>
         <img src={selectedUser.profilePic || avatar} alt='' className='w-8 rounded-full' />
         <p className='flex-1 text-lg text-white flex items-center gap-2'>
@@ -83,9 +114,25 @@ const Container = () => {
       <div className='flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-3 pb-6'>
         {messages.map((msg,index)=>(
           <div key={index} className={`flex items-end gap-2 justify-end ${msg.senderId!== authUser._id && 'flex-row-reverse'}`}>
-            {msg.image ? (
-              <img src={msg.image} alt="" className='max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8
-              '/>
+            {msg.viewOnce && (msg.image || msg.video) ? (
+              <ViewOnceMessage 
+                message={msg} 
+                onView={handleViewOnceView}
+                isOwnMessage={msg.senderId === authUser._id}
+              />
+            ) : msg.image ? (
+              <div className="relative">
+                <img src={msg.image} alt="" className='max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8'/>
+                {msg.viewOnce && (
+                  <div className="absolute top-2 right-2 bg-black bg-opacity-50 px-2 py-1 rounded text-white text-xs flex items-center space-x-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <span>View once</span>
+                  </div>
+                )}
+              </div>
             ) : msg.voice ? (
               <div className={`p-2 max-w-[250px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
                 <audio 
@@ -101,14 +148,25 @@ const Container = () => {
               </div>
             ) : msg.video ? (
               <div className={`p-2 max-w-[300px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
-                <video 
-                  controls 
-                  className="w-full max-h-64 rounded-lg"
-                  preload="metadata"
-                  src={msg.video}
-                >
-                  Your browser does not support the video element.
-                </video>
+                <div className="relative">
+                  <video 
+                    controls 
+                    className="w-full max-h-64 rounded-lg"
+                    preload="metadata"
+                    src={msg.video}
+                  >
+                    Your browser does not support the video element.
+                  </video>
+                  {msg.viewOnce && (
+                    <div className="absolute top-2 right-2 bg-black bg-opacity-50 px-2 py-1 rounded text-white text-xs flex items-center space-x-1">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                      <span>View once</span>
+                    </div>
+                  )}
+                </div>
                 <p className="text-xs text-gray-400 mt-1">Video Message</p>
               </div>
             ) : (
