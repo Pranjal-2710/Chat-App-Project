@@ -43,14 +43,21 @@ export const ChatProvider=({children})=>{
     //function to send message to selected user
     const sendMessage= async(messageData)=>{
         try {
+            console.log('Sending message data:', {
+                ...messageData,
+                voice: messageData.voice ? `${messageData.voice.slice(0, 50)}... (${messageData.voice.length} chars)` : undefined
+            });
             const {data}=await axios.post(`/api/messages/send/${selectedUser._id}`,messageData)
+            console.log('Message sent, response:', data);
             if(data.success){
+                console.log('New message from server:', data.newMessage);
                 setMessages((previousMessages)=> [...previousMessages,data.newMessage])
             }
             else{
                 toast.error(data.message)
             }
         } catch (error) {
+            console.error('Error sending message:', error);
             toast.error(error.message)
         }
     }

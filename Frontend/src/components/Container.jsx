@@ -84,19 +84,25 @@ const Container = () => {
               '/>
             ) : msg.voice ? (
               <div className={`p-2 max-w-[250px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
-                {console.log('Rendering voice message:', msg.voice)}
+                {console.log('Rendering voice message with URL:', msg.voice?.slice(0, 100) + '...')}
+                {console.log('Voice message exists:', !!msg.voice)}
+                {console.log('Voice URL type:', typeof msg.voice)}
                 <audio 
                   controls 
                   className="w-full h-8"
                   style={{filter: 'invert(1)'}}
                   preload="metadata"
+                  src={msg.voice}
+                  onError={(e) => {
+                    console.error('Audio error:', e);
+                    console.error('Audio src:', e.target.src);
+                  }}
+                  onLoadStart={() => console.log('Audio loading started')}
+                  onCanPlay={() => console.log('Audio can play')}
                 >
-                  <source src={msg.voice} type="audio/webm" />
-                  <source src={msg.voice} type="audio/wav" />
-                  <source src={msg.voice} type="audio/mp3" />
-                  <source src={msg.voice} type="audio/ogg" />
                   Your browser does not support the audio element.
                 </audio>
+                <p className="text-xs text-gray-400 mt-1">Voice Message ({Math.round((msg.voice?.length || 0) / 1024)}KB)</p>
               </div>
             ) : (
               <p className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500/30 text-white ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>

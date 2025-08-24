@@ -29,6 +29,8 @@ const VoiceRecorder = ({ onSendVoice }) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           console.log('Converting to base64...');
+          console.log('Base64 data length:', reader.result.length);
+          console.log('Base64 data starts with:', reader.result.slice(0, 100));
           onSendVoice({ voice: reader.result });
           setIsRecording(false);
           
@@ -67,11 +69,9 @@ const VoiceRecorder = ({ onSendVoice }) => {
           onMouseUp={stopRecording}
           onMouseLeave={stopRecording}
           onTouchStart={(e) => {
-            e.preventDefault();
             startRecording();
           }}
           onTouchEnd={(e) => {
-            e.preventDefault();
             stopRecording();
           }}
           className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 transition-all duration-200"
