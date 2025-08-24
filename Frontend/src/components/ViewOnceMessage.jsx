@@ -19,28 +19,23 @@ const ViewOnceMessage = ({ message, onView, isOwnMessage }) => {
   }, [message.viewedBy, authUser]);
 
   const handleView = async () => {
-    if (!hasBeenViewed && message.viewOnce) {
-      // First show the media
-      setIsExpanded(true);
-      
-      // Then mark as viewed in backend after a short delay
-      setTimeout(async () => {
-        const success = await markViewOnceAsViewed(message._id);
-        if (success) {
-          setHasBeenViewed(true);
-          
-          // Call the onView callback if provided
-          if (onView) {
-            onView(message._id);
-          }
-        }
-      }, 100); // Small delay to ensure media is shown first
-    } else {
-      setIsExpanded(true);
-    }
+    // Show the media first
+    setIsExpanded(true);
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
+    // If this is a view-once message that hasn't been viewed yet, mark it as viewed when closing
+    if (message.viewOnce && !hasBeenViewed) {
+      const success = await markViewOnceAsViewed(message._id);
+      if (success) {
+        setHasBeenViewed(true);
+        
+        // Call the onView callback if provided
+        if (onView) {
+          onView(message._id);
+        }
+      }
+    }
     setIsExpanded(false);
   };
 
@@ -131,14 +126,12 @@ const ViewOnceMessage = ({ message, onView, isOwnMessage }) => {
           <p className="text-xs text-gray-400">
             {message.image ? 'Photo' : 'Video'} Message
           </p>
-          {message.viewOnce && (
-            <button
-              onClick={handleClose}
-              className="text-xs text-gray-400 hover:text-white"
-            >
-              Close
-            </button>
-          )}
+          <button
+            onClick={handleClose}
+            className="text-xs text-gray-400 hover:text-white"
+          >
+            Close
+          </button>
         </div>
       </div>
     );
