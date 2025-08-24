@@ -11,7 +11,7 @@ import send_button from '../assets/send_button.svg'
 import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/Auth'
 import toast from 'react-hot-toast'
-import VoiceRecorder from './VoiceRecorderSimple'
+import VoiceRecorder from './VoiceRecorder'
 const Container = () => {
 
   const {messages,selectedUser,setSelectedUser,sendMessage, getMessages}= useContext(ChatContext)
