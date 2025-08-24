@@ -47,6 +47,26 @@ const Container = () => {
 
   const handleSendVoice = async(voiceData) => {
     console.log('Sending voice message:', voiceData);
+    
+    // Test if we can play the base64 data directly first
+    const testPlayback = () => {
+      const testAudio = new Audio(voiceData.voice);
+      testAudio.oncanplay = () => {
+        console.log('✅ Voice data can be played directly');
+        testAudio.play().then(() => {
+          console.log('✅ Test playback successful');
+        }).catch(e => {
+          console.error('❌ Test playback failed:', e);
+        });
+      };
+      testAudio.onerror = (e) => {
+        console.error('❌ Voice data cannot be played directly:', e);
+      };
+    };
+    
+    // Uncomment the line below to test direct playback
+    testPlayback();
+    
     await sendMessage(voiceData)
   }
 
