@@ -64,6 +64,7 @@ const Container = () => {
   }
 
   const handleMediaSend = async(mediaData) => {
+    console.log('Sending media with data:', mediaData);
     await sendMessage(mediaData)
     setMediaPreview(null)
   }
@@ -114,6 +115,7 @@ const Container = () => {
       <div className='flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-3 pb-6'>
         {messages.map((msg,index)=>(
           <div key={index} className={`flex items-end gap-2 justify-end ${msg.senderId!== authUser._id && 'flex-row-reverse'}`}>
+            {console.log('Rendering message:', msg.viewOnce, msg.image, msg.video)}
             {msg.viewOnce && (msg.image || msg.video) ? (
               <ViewOnceMessage 
                 message={msg} 
@@ -123,15 +125,6 @@ const Container = () => {
             ) : msg.image ? (
               <div className="relative">
                 <img src={msg.image} alt="" className='max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8'/>
-                {msg.viewOnce && (
-                  <div className="absolute top-2 right-2 bg-black bg-opacity-50 px-2 py-1 rounded text-white text-xs flex items-center space-x-1">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    <span>View once</span>
-                  </div>
-                )}
               </div>
             ) : msg.voice ? (
               <div className={`p-2 max-w-[250px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
@@ -157,15 +150,6 @@ const Container = () => {
                   >
                     Your browser does not support the video element.
                   </video>
-                  {msg.viewOnce && (
-                    <div className="absolute top-2 right-2 bg-black bg-opacity-50 px-2 py-1 rounded text-white text-xs flex items-center space-x-1">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
-                      <span>View once</span>
-                    </div>
-                  )}
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Video Message</p>
               </div>

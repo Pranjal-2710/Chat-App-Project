@@ -34,20 +34,7 @@ const ViewOnceMessage = ({ message, onView, isOwnMessage }) => {
     setIsExpanded(false);
   };
 
-  // If it's a view-once message that has been viewed, show a placeholder
-  if (hasBeenViewed && message.viewOnce) {
-    return (
-      <div className={`p-2 max-w-[250px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${isOwnMessage ? 'rounded-br-none' : 'rounded-bl-none'}`}>
-        <div className="flex items-center space-x-2 text-gray-400">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-          <span className="text-xs">This message was deleted</span>
-        </div>
-      </div>
-    );
-  }
+
 
   // If it's a view-once message that hasn't been viewed, show the view button
   if (message.viewOnce && !hasBeenViewed) {
@@ -67,6 +54,21 @@ const ViewOnceMessage = ({ message, onView, isOwnMessage }) => {
           >
             View
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If it's a view-once message that has been viewed, show the deleted message
+  if (message.viewOnce && hasBeenViewed) {
+    return (
+      <div className={`p-2 max-w-[250px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${isOwnMessage ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+        <div className="flex items-center space-x-2 text-gray-400">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span className="text-xs">This message was deleted</span>
         </div>
       </div>
     );
@@ -132,9 +134,10 @@ const ViewOnceMessage = ({ message, onView, isOwnMessage }) => {
     );
   }
 
-  // Default case - show regular media (non-view-once)
-  // This component should only be used for view-once messages
-  // Regular messages are handled by the parent component
+  // Default case - this component should only be used for view-once messages
+  // If we reach here, it means the message doesn't have viewOnce flag
+  // This shouldn't happen, but just in case, return null
+  console.warn('ViewOnceMessage component used for non-view-once message:', message);
   return null;
 };
 
