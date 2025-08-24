@@ -7,7 +7,6 @@ const VoiceRecorder = ({ onSendVoice }) => {
 
   const startRecording = async () => {
     try {
-      console.log('Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       
@@ -15,29 +14,16 @@ const VoiceRecorder = ({ onSendVoice }) => {
       const chunks = [];
       
       recorder.ondataavailable = (event) => {
-        console.log('Audio data available:', event.data.size);
         if (event.data.size > 0) {
           chunks.push(event.data);
         }
       };
       
       recorder.onstop = () => {
-        console.log('Recording stopped, processing...');
         const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-        console.log('Audio blob created:', audioBlob.size, 'bytes');
-        console.log('Audio blob type:', audioBlob.type);
         
         const reader = new FileReader();
         reader.onloadend = () => {
-          console.log('Converting to base64...');
-          console.log('Base64 data length:', reader.result.length);
-          console.log('Base64 data starts with:', reader.result.slice(0, 100));
-          
-          // Test if the audio can play locally
-          const testAudio = new Audio(reader.result);
-          testAudio.oncanplay = () => console.log('✅ Local audio test: CAN PLAY');
-          testAudio.onerror = (e) => console.error('❌ Local audio test: ERROR', e);
-          
           onSendVoice({ voice: reader.result });
           setIsRecording(false);
           
@@ -53,17 +39,15 @@ const VoiceRecorder = ({ onSendVoice }) => {
       setMediaRecorder(recorder);
       recorder.start();
       setIsRecording(true);
-      console.log('Recording started');
       
     } catch (error) {
-      console.error('Error starting recording:', error);
+      console.error('Error accessing microphone:', error);
       setIsRecording(false);
     }
   };
 
   const stopRecording = () => {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
-      console.log('Stopping recording...');
       mediaRecorder.stop();
     }
   };

@@ -98,23 +98,12 @@ export const sendMessage = async(req,res)=>{
         }
 
         if(voice){
-            console.log('Processing voice upload...');
-            console.log('Voice data type:', typeof voice);
-            console.log('Voice data length:', voice.length);
-            console.log('Voice data format:', voice.slice(0, 50));
-            
             try {
                 const uploadResponse= await cloudinary.uploader.upload(voice, {
                     resource_type: "video", // Cloudinary uses "video" resource type for audio files
                     format: "mp3" // Convert to mp3 for better compatibility
                 });
                 voiceUrl=uploadResponse.secure_url;
-                console.log('Voice uploaded successfully:', voiceUrl);
-                console.log('Cloudinary response:', {
-                    public_id: uploadResponse.public_id,
-                    format: uploadResponse.format,
-                    resource_type: uploadResponse.resource_type
-                });
             } catch (cloudinaryError) {
                 console.error('Cloudinary upload error:', cloudinaryError);
                 throw new Error('Failed to upload voice message');

@@ -46,27 +46,6 @@ const Container = () => {
   }
 
   const handleSendVoice = async(voiceData) => {
-    console.log('Sending voice message:', voiceData);
-    
-    // Test if we can play the base64 data directly first
-    const testPlayback = () => {
-      const testAudio = new Audio(voiceData.voice);
-      testAudio.oncanplay = () => {
-        console.log('✅ Voice data can be played directly');
-        testAudio.play().then(() => {
-          console.log('✅ Test playback successful');
-        }).catch(e => {
-          console.error('❌ Test playback failed:', e);
-        });
-      };
-      testAudio.onerror = (e) => {
-        console.error('❌ Voice data cannot be played directly:', e);
-      };
-    };
-    
-    // Uncomment the line below to test direct playback
-    testPlayback();
-    
     await sendMessage(voiceData)
   }
 
@@ -104,25 +83,16 @@ const Container = () => {
               '/>
             ) : msg.voice ? (
               <div className={`p-2 max-w-[250px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
-                {console.log('Rendering voice message with URL:', msg.voice?.slice(0, 100) + '...')}
-                {console.log('Voice message exists:', !!msg.voice)}
-                {console.log('Voice URL type:', typeof msg.voice)}
                 <audio 
                   controls 
                   className="w-full h-8"
                   style={{filter: 'invert(1)'}}
                   preload="metadata"
                   src={msg.voice}
-                  onError={(e) => {
-                    console.error('Audio error:', e);
-                    console.error('Audio src:', e.target.src);
-                  }}
-                  onLoadStart={() => console.log('Audio loading started')}
-                  onCanPlay={() => console.log('Audio can play')}
                 >
                   Your browser does not support the audio element.
                 </audio>
-                <p className="text-xs text-gray-400 mt-1">Voice Message ({Math.round((msg.voice?.length || 0) / 1024)}KB)</p>
+                <p className="text-xs text-gray-400 mt-1">Voice Message</p>
               </div>
             ) : (
               <p className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500/30 text-white ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
