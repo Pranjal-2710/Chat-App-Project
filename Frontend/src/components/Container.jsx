@@ -11,6 +11,7 @@ import send_button from '../assets/send_button.svg'
 import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/Auth'
 import toast from 'react-hot-toast'
+import VoiceRecorder from './VoiceRecorder'
 const Container = () => {
 
   const {messages,selectedUser,setSelectedUser,sendMessage, getMessages}= useContext(ChatContext)
@@ -42,6 +43,10 @@ const Container = () => {
     }
     reader.readAsDataURL(file)
 
+  }
+
+  const handleSendVoice = async(voiceData) => {
+    await sendMessage(voiceData)
   }
 
   useEffect(()=>{
@@ -76,8 +81,21 @@ const Container = () => {
             {msg.image ? (
               <img src={msg.image} alt="" className='max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8
               '/>
-            ):(
-              <p className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500 /30 text-white ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+            ) : msg.voice ? (
+              <div className={`p-2 max-w-[250px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+                <audio 
+                  controls 
+                  className="w-full h-8"
+                  style={{filter: 'invert(1)'}}
+                >
+                  <source src={msg.voice} type="audio/wav" />
+                  <source src={msg.voice} type="audio/mp3" />
+                  <source src={msg.voice} type="audio/ogg" />
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            ) : (
+              <p className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500/30 text-white ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
                 {msg.text}
               </p>
             )}
@@ -105,6 +123,8 @@ const Container = () => {
             <img src={gallery_icon} alt="" className='w-5 mr-2 cursor-pointer' />
           </label>
         </div>
+
+        <VoiceRecorder onSendVoice={handleSendVoice} />
 
         <img onClick={handleSendMessage} src={send_button} alt="" className='w-7 cursor-pointer' />
 
