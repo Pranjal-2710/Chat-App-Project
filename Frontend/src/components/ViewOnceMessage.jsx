@@ -1,30 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { ChatContext } from '../../context/ChatContext';
+import { AuthContext } from '../../context/Auth';
 
 const ViewOnceMessage = ({ message, onView, isOwnMessage }) => {
   const [hasBeenViewed, setHasBeenViewed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { markViewOnceAsViewed } = useContext(ChatContext);
+  const { authUser } = useContext(AuthContext);
 
-  // Check if message has been viewed (you might want to store this in your backend)
+  // Check if message has been viewed by current user
   useEffect(() => {
-    // For demo purposes, we'll use localStorage to track viewed messages
-    // In a real app, this should be handled by your backend
-    const viewedMessages = JSON.parse(localStorage.getItem('viewedMessages') || '[]');
-    if (viewedMessages.includes(message._id)) {
-      setHasBeenViewed(true);
+    if (message.viewedBy && message.viewedBy.length > 0 && authUser) {
+      // Check if current user has viewed this message
+      if (message.viewedBy.includes(authUser._id)) {
+        setHasBeenViewed(true);
+      }
     }
-  }, [message._id]);
+  }, [message.viewedBy, authUser]);
 
-  const handleView = () => {
+  const handleView = async () => {
     if (!hasBeenViewed && message.viewOnce) {
-      // Mark as viewed
-      const viewedMessages = JSON.parse(localStorage.getItem('viewedMessages') || '[]');
-      viewedMessages.push(message._id);
-      localStorage.setItem('viewedMessages', JSON.stringify(viewedMessages));
-      setHasBeenViewed(true);
-      
-      // Call the onView callback to handle backend logic
-      if (onView) {
-        onView(message._id);
+      // Mark as viewed in backend
+      const success = await markViewOnceAsViewed(message._id);
+      if (success) {
+        setHasBeenViewed(true);
+        
+        // Call the onView callback if provided
+        if (onView) {
+          onView(message._id);
+        }
       }
     }
     setIsExpanded(true);

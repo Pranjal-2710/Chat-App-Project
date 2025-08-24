@@ -82,11 +82,59 @@ export const markMessageAsSeen= async(req,res)=>{
     }
 }
 
+//api to mark view-once message as viewed
+export const markViewOnceAsViewed= async(req,res)=>{
+    try {
+        const {id}= req.params
+        const userId= req.user._id
+        
+        const message= await Message.findById(id)
+        
+        if(!message){
+            return res.json({
+                success:false,
+                message:"Message not found"
+            })
+        }
+        
+        if(!message.viewOnce){
+            return res.json({
+                success:false,
+                message:"Message is not a view-once message"
+            })
+        }
+        
+        // Check if user has already viewed this message
+        if(message.viewedBy.includes(userId)){
+            return res.json({
+                success:false,
+                message:"Message already viewed"
+            })
+        }
+        
+        // Add user to viewedBy array
+        await Message.findByIdAndUpdate(id,{
+            $push:{viewedBy:userId}
+        })
+        
+        res.json({
+            success:true,
+            message:"Message marked as viewed"
+        })
+    } catch (error) {
+        console.log(error.message)
+        res.json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+
 // Send message to selected user
 
 export const sendMessage = async(req,res)=>{
     try {
-        const {text,image,voice,video}=req.body
+        const {text,image,voice,video,viewOnce}=req.body
         const receiverId= req.params.id;
         const senderId= req.user._id;
         let imageUrl;
@@ -131,7 +179,7 @@ export const sendMessage = async(req,res)=>{
             image: imageUrl,
             voice: voiceUrl,
             video: videoUrl,
-
+            viewOnce: viewOnce || false
         })
 
         //Emit new message to the receiver's socket

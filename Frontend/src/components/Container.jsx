@@ -74,8 +74,8 @@ const Container = () => {
   }
 
   const handleViewOnceView = async(messageId) => {
-    // Handle view-once message viewed
-    // You can implement backend logic here to mark the message as viewed
+    // This function is called when a view-once message is viewed
+    // The actual backend call is handled in the ViewOnceMessage component
     console.log('View-once message viewed:', messageId)
   }
 
