@@ -6,6 +6,7 @@ const messageSchema=new mongoose.Schema({
     text:{type:String},
     image:{type:String},
     voice:{type:String},
+    video:{type:String},
     seen:{type:Boolean, default:false}
 
 },{timestamps:true})

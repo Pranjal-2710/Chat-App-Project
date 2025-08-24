@@ -12,6 +12,7 @@ import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/Auth'
 import toast from 'react-hot-toast'
 import VoiceRecorder from './VoiceRecorder'
+import CameraCapture from './CameraCapture'
 const Container = () => {
 
   const {messages,selectedUser,setSelectedUser,sendMessage, getMessages}= useContext(ChatContext)
@@ -47,6 +48,10 @@ const Container = () => {
 
   const handleSendVoice = async(voiceData) => {
     await sendMessage(voiceData)
+  }
+
+  const handleCameraCapture = async(captureData) => {
+    await sendMessage(captureData)
   }
 
   useEffect(()=>{
@@ -94,6 +99,18 @@ const Container = () => {
                 </audio>
                 <p className="text-xs text-gray-400 mt-1">Voice Message</p>
               </div>
+            ) : msg.video ? (
+              <div className={`p-2 max-w-[300px] rounded-lg mb-8 bg-violet-500/30 border border-gray-700 ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+                <video 
+                  controls 
+                  className="w-full max-h-64 rounded-lg"
+                  preload="metadata"
+                  src={msg.video}
+                >
+                  Your browser does not support the video element.
+                </video>
+                <p className="text-xs text-gray-400 mt-1">Video Message</p>
+              </div>
             ) : (
               <p className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500/30 text-white ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
                 {msg.text}
@@ -115,6 +132,7 @@ const Container = () => {
 
       <div className='absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3'>
         <div className='flex-1 flex items-center bg-gray-100/12 px-3 rounded-full '>
+          <CameraCapture onCapture={handleCameraCapture} onClose={() => {}} />
           <input onChange={(e)=>setInput(e.target.value)} value={input}
           onKeyDown={(e)=>e.key==="Enter" ? handleSendMessage(e):null}
            type="text" placeholder='Send a message....' className='flex-1 text-sm p-3 border-none rounded-lg outline-none text-white placeholder-white' />

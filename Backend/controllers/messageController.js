@@ -86,11 +86,12 @@ export const markMessageAsSeen= async(req,res)=>{
 
 export const sendMessage = async(req,res)=>{
     try {
-        const {text,image,voice}=req.body
+        const {text,image,voice,video}=req.body
         const receiverId= req.params.id;
         const senderId= req.user._id;
         let imageUrl;
         let voiceUrl;
+        let videoUrl;
         
         if(image){
             const uploadResponse= await cloudinary.uploader.upload(image);
@@ -110,12 +111,26 @@ export const sendMessage = async(req,res)=>{
             }
         }
 
+        if(video){
+            try {
+                const uploadResponse= await cloudinary.uploader.upload(video, {
+                    resource_type: "video", // Video resource type
+                    format: "mp4" // Convert to mp4 for better compatibility
+                });
+                videoUrl=uploadResponse.secure_url;
+            } catch (cloudinaryError) {
+                console.error('Cloudinary video upload error:', cloudinaryError);
+                throw new Error('Failed to upload video message');
+            }
+        }
+
         const newMessage= await Message.create({
             senderId,
             receiverId,
             text,
             image: imageUrl,
             voice: voiceUrl,
+            video: videoUrl,
 
         })
 
