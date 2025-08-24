@@ -6,14 +6,24 @@ const CameraCapture = ({ onCapture, onClose }) => {
   const [isRecordingVideo, setIsRecordingVideo] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const intervalRef = useRef(null);
 
+  // Effect to handle video stream when it changes
+  useEffect(() => {
+    if (stream && videoRef.current && isOpen) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(e => console.error('Video play error:', e));
+    }
+  }, [stream, isOpen]);
+
   // Open camera
   const openCamera = async () => {
     try {
+      console.log('Requesting camera access...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           width: { ideal: 1280 },
@@ -23,12 +33,11 @@ const CameraCapture = ({ onCapture, onClose }) => {
         audio: true 
       });
       
+      console.log('Camera access granted, stream:', mediaStream);
+      console.log('Video tracks:', mediaStream.getVideoTracks());
+      
       setStream(mediaStream);
       setIsOpen(true);
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
     } catch (error) {
       console.error('Error accessing camera:', error);
       alert('Could not access camera. Please check permissions.');
@@ -47,15 +56,31 @@ const CameraCapture = ({ onCapture, onClose }) => {
     setIsOpen(false);
     setIsRecordingVideo(false);
     setRecordingTime(0);
+    setIsVideoReady(false);
     onClose();
   };
 
   // Capture photo
   const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current) {
+      alert('Camera not ready. Please try again.');
+      return;
+    }
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
+    
+    // Check if video is ready
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      alert('Camera not ready. Please wait a moment and try again.');
+      return;
+    }
+    
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      alert('Camera not properly initialized. Please close and reopen camera.');
+      return;
+    }
+
     const context = canvas.getContext('2d');
 
     // Set canvas size to video size
@@ -185,6 +210,10 @@ const CameraCapture = ({ onCapture, onClose }) => {
             playsInline
             muted
             className="w-full h-64 bg-black rounded-lg object-cover"
+            onLoadedMetadata={() => setIsVideoReady(true)}
+            onCanPlay={() => console.log('Video can play')}
+            onPlaying={() => console.log('Video is playing')}
+            onError={(e) => console.error('Video error:', e)}
           />
           
           {/* Recording indicator */}
@@ -203,25 +232,39 @@ const CameraCapture = ({ onCapture, onClose }) => {
               {/* Photo Button */}
               <button
                 onClick={capturePhoto}
-                className="flex flex-col items-center p-3 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
+                disabled={!isVideoReady}
+                className={`flex flex-col items-center p-3 rounded-lg transition-colors ${
+                  isVideoReady 
+                    ? 'bg-blue-500 hover:bg-blue-600' 
+                    : 'bg-gray-500 cursor-not-allowed'
+                }`}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white mb-1">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                   <circle cx="12" cy="13" r="4"/>
                 </svg>
-                <span className="text-white text-xs">Photo</span>
+                <span className="text-white text-xs">
+                  {isVideoReady ? 'Photo' : 'Loading...'}
+                </span>
               </button>
 
               {/* Video Button */}
               <button
                 onClick={startVideoRecording}
-                className="flex flex-col items-center p-3 bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                disabled={!isVideoReady}
+                className={`flex flex-col items-center p-3 rounded-lg transition-colors ${
+                  isVideoReady 
+                    ? 'bg-red-500 hover:bg-red-600' 
+                    : 'bg-gray-500 cursor-not-allowed'
+                }`}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white mb-1">
                   <polygon points="23 7 16 12 23 17 23 7"/>
                   <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                 </svg>
-                <span className="text-white text-xs">Video</span>
+                <span className="text-white text-xs">
+                  {isVideoReady ? 'Video' : 'Loading...'}
+                </span>
               </button>
             </>
           ) : (
