@@ -1,15 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 const MediaPreview = ({ mediaData, onSend, onCancel }) => {
-  const [isViewOnce, setIsViewOnce] = useState(false);
-
   const handleSend = () => {
-    // Add view-once flag to the media data
-    const dataToSend = {
-      ...mediaData,
-      viewOnce: isViewOnce
-    };
-    onSend(dataToSend);
+    onSend(mediaData);
   };
 
   const formatFileSize = (base64String) => {
@@ -69,28 +62,7 @@ const MediaPreview = ({ mediaData, onSend, onCancel }) => {
           </div>
         </div>
 
-        {/* View Once Toggle */}
-        <div className="flex items-center justify-between mb-4 p-3 bg-gray-800 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-            <span className="text-white text-sm">View once</span>
-          </div>
-          <button
-            onClick={() => setIsViewOnce(!isViewOnce)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              isViewOnce ? 'bg-blue-500' : 'bg-gray-600'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                isViewOnce ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
-        </div>
+
 
         {/* Action Buttons */}
         <div className="flex space-x-3">

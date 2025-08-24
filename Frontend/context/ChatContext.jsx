@@ -56,31 +56,7 @@ export const ChatProvider=({children})=>{
         }
     }
 
-    //function to mark view-once message as viewed
-    const markViewOnceAsViewed= async(messageId)=>{
-        try {
-            const {data}=await axios.put(`/api/messages/view-once/${messageId}`)
-            if(data.success){
-                // Update the message in the local state to reflect it's been viewed
-                setMessages((prevMessages)=>
-                    prevMessages.map(msg=>
-                        msg._id===messageId 
-                            ? {...msg, viewedBy: [...(msg.viewedBy || []), authUser._id]}
-                            : msg
-                    )
-                )
-                return true
-            }
-            else{
-                toast.error(data.message)
-                return false
-            }
-        } catch (error) {
-            console.error('Error marking view-once as viewed:', error);
-            toast.error(error.message)
-            return false
-        }
-    }
+
 
     //function to subscribe to messages for selected user
     const subscribeToMessages =async()=>{
@@ -118,7 +94,6 @@ export const ChatProvider=({children})=>{
         getUsers,
         getMessages,
         sendMessage,
-        markViewOnceAsViewed,
         setSelectedUser,
         unseenMessages,
         setUnseenMessages

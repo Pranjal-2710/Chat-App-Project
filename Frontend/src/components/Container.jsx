@@ -14,7 +14,6 @@ import toast from 'react-hot-toast'
 import VoiceRecorder from './VoiceRecorder'
 import CameraCapture from './CameraCapture'
 import MediaPreview from './MediaPreview'
-import ViewOnceMessage from './ViewOnceMessage'
 const Container = () => {
 
   const {messages,selectedUser,setSelectedUser,sendMessage, getMessages}= useContext(ChatContext)
@@ -73,11 +72,7 @@ const Container = () => {
     setMediaPreview(null)
   }
 
-  const handleViewOnceView = async(messageId) => {
-    // This function is called when a view-once message is viewed
-    // The actual backend call is handled in the ViewOnceMessage component
-    console.log('View-once message viewed:', messageId)
-  }
+
 
   useEffect(()=>{
     if(selectedUser){
@@ -115,13 +110,7 @@ const Container = () => {
       <div className='flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-3 pb-6'>
         {messages.map((msg,index)=>(
           <div key={index} className={`flex items-end gap-2 justify-end ${msg.senderId!== authUser._id && 'flex-row-reverse'}`}>
-            {msg.viewOnce && (msg.image || msg.video) ? (
-              <ViewOnceMessage 
-                message={msg} 
-                onView={handleViewOnceView}
-                isOwnMessage={msg.senderId === authUser._id}
-              />
-            ) : msg.image ? (
+            {msg.image ? (
               <div className="relative">
                 <img src={msg.image} alt="" className='max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8'/>
               </div>

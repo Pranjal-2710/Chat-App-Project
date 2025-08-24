@@ -7,9 +7,7 @@ const messageSchema=new mongoose.Schema({
     image:{type:String},
     voice:{type:String},
     video:{type:String},
-    seen:{type:Boolean, default:false},
-    viewOnce:{type:Boolean, default:false},
-    viewedBy:[{type:mongoose.Schema.Types.ObjectId, ref:"User"}]
+    seen:{type:Boolean, default:false}
 
 },{timestamps:true})
 
