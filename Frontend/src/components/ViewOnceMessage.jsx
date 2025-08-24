@@ -20,18 +20,24 @@ const ViewOnceMessage = ({ message, onView, isOwnMessage }) => {
 
   const handleView = async () => {
     if (!hasBeenViewed && message.viewOnce) {
-      // Mark as viewed in backend
-      const success = await markViewOnceAsViewed(message._id);
-      if (success) {
-        setHasBeenViewed(true);
-        
-        // Call the onView callback if provided
-        if (onView) {
-          onView(message._id);
+      // First show the media
+      setIsExpanded(true);
+      
+      // Then mark as viewed in backend after a short delay
+      setTimeout(async () => {
+        const success = await markViewOnceAsViewed(message._id);
+        if (success) {
+          setHasBeenViewed(true);
+          
+          // Call the onView callback if provided
+          if (onView) {
+            onView(message._id);
+          }
         }
-      }
+      }, 100); // Small delay to ensure media is shown first
+    } else {
+      setIsExpanded(true);
     }
-    setIsExpanded(true);
   };
 
   const handleClose = () => {
@@ -72,7 +78,7 @@ const ViewOnceMessage = ({ message, onView, isOwnMessage }) => {
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
             <circle cx="12" cy="12" r="3"/>
           </svg>
-          <span className="text-xs">This message was deleted</span>
+          <span className="text-xs">Cannot view more than one time</span>
         </div>
       </div>
     );
