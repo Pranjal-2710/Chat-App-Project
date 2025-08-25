@@ -16,13 +16,48 @@ import CameraCapture from './CameraCapture'
 import MediaPreview from './MediaPreview'
 const Container = () => {
 
-  const {messages,selectedUser,setSelectedUser,sendMessage, getMessages}= useContext(ChatContext)
+  const {messages,selectedUser,setSelectedUser,sendMessage, getMessages, deleteForMe, deleteForEveryone}= useContext(ChatContext)
   const {authUser, onlineUsers}= useContext(AuthContext)
 
   const scrollEnd=useRef()
 
   const [input,setInput]= useState('')
   const [mediaPreview, setMediaPreview] = useState(null)
+  const [selectedMessageId, setSelectedMessageId] = useState(null)
+  const [showDeleteBar, setShowDeleteBar] = useState(false)
+  const longPressTimerRef = useRef(null)
+
+  const handleLongPressStart = (message)=>{
+    if(longPressTimerRef.current) clearTimeout(longPressTimerRef.current)
+    longPressTimerRef.current = setTimeout(()=>{
+      setSelectedMessageId(message._id)
+      setShowDeleteBar(true)
+    }, 500)
+  }
+
+  const handleLongPressEnd = ()=>{
+    if(longPressTimerRef.current){
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
+  const handleClearSelection = ()=>{
+    setSelectedMessageId(null)
+    setShowDeleteBar(false)
+  }
+
+  const handleDeleteForMe = async()=>{
+    if(!selectedMessageId) return
+    await deleteForMe(selectedMessageId)
+    handleClearSelection()
+  }
+
+  const handleDeleteForEveryone = async()=>{
+    if(!selectedMessageId) return
+    await deleteForEveryone(selectedMessageId)
+    handleClearSelection()
+  }
 
   const handleSendMessage= async (e)=>{
     e.preventDefault()
@@ -103,13 +138,30 @@ const Container = () => {
 
           </span>)}
         </p>
+        {showDeleteBar && selectedMessageId && (
+          <div className='flex items-center gap-2'>
+            <button onClick={handleDeleteForMe} className='text-xs bg-white/10 text-white px-3 py-1 rounded-full border border-white/20'>Delete for me</button>
+            {(()=>{ const msg = messages.find(m=>m._id===selectedMessageId); return msg && msg.senderId===authUser._id })() && (
+              <button onClick={handleDeleteForEveryone} className='text-xs bg-red-500/80 text-white px-3 py-1 rounded-full'>Delete for everyone</button>
+            )}
+            <button onClick={handleClearSelection} className='text-xs text-white/70 px-2'>Cancel</button>
+          </div>
+        )}
         <img onClick={()=>setSelectedUser(null)} src={arrow_icon} alt="" className='md:hidden max-w-7'/>
         <img src={help_icon} alt="" className='max-md:hidden max-w-5' />
       </div>
 
       <div className='flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-3 pb-6'>
         {messages.map((msg,index)=>(
-          <div key={index} className={`flex items-end gap-2 justify-end ${msg.senderId!== authUser._id && 'flex-row-reverse'}`}>
+          <div
+            key={index}
+            className={`flex items-end gap-2 justify-end ${msg.senderId!== authUser._id && 'flex-row-reverse'} ${selectedMessageId===msg._id ? 'bg-white/5 rounded-md' : ''}`}
+            onMouseDown={()=>handleLongPressStart(msg)}
+            onMouseUp={handleLongPressEnd}
+            onMouseLeave={handleLongPressEnd}
+            onTouchStart={()=>handleLongPressStart(msg)}
+            onTouchEnd={handleLongPressEnd}
+          >
             {msg.image ? (
               <div className="relative">
                 <img src={msg.image} alt="" className='max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8'/>
@@ -141,6 +193,10 @@ const Container = () => {
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Video Message</p>
               </div>
+            ) : msg.isDeletedForEveryone ? (
+              <p className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-gray-600/40 text-gray-300 italic ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+                This message was deleted
+              </p>
             ) : (
               <p className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500/30 text-white ${msg.senderId=== authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
                 {msg.text}

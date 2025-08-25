@@ -56,6 +56,35 @@ export const ChatProvider=({children})=>{
         }
     }
 
+    // delete for me
+    const deleteForMe = async(messageId)=>{
+        try{
+            const {data} = await axios.delete(`/api/messages/delete/me/${messageId}`)
+            if(data.success){
+                setMessages((prev)=> prev.filter((m)=> m._id !== messageId))
+            }else{
+                toast.error(data.message)
+            }
+        }catch(error){
+            toast.error(error.message)
+        }
+    }
+
+    // delete for everyone
+    const deleteForEveryone = async(messageId)=>{
+        try{
+            const {data} = await axios.delete(`/api/messages/delete/everyone/${messageId}`)
+            if(data.success){
+                // Replace the original with a tombstone locally
+                setMessages((prev)=> prev.map((m)=> m._id===messageId ? { ...m, text:null, image:null, voice:null, video:null, isDeletedForEveryone:true, _id: data.tombstoneId } : m))
+            }else{
+                toast.error(data.message)
+            }
+        }catch(error){
+            toast.error(error.message)
+        }
+    }
+
 
 
     //function to subscribe to messages for selected user
@@ -74,12 +103,19 @@ export const ChatProvider=({children})=>{
                 }))
             }
         })
+
+        socket.on("messageDeletedForEveryone", ({messageId, tombstone})=>{
+            setMessages((prev)=> prev.map((m)=> m._id===messageId ? { ...m, text:null, image:null, voice:null, video:null, isDeletedForEveryone:true, _id: tombstone?._id } : m))
+        })
     }
 
     //function to unsubscribe from messages
 
     const unsubscribeFromMessages=()=>{
-        if(socket) socket.off("newMessage")
+        if(socket){
+            socket.off("newMessage")
+            socket.off("messageDeletedForEveryone")
+        }
     }
 
     useEffect(()=>{
@@ -94,6 +130,8 @@ export const ChatProvider=({children})=>{
         getUsers,
         getMessages,
         sendMessage,
+        deleteForMe,
+        deleteForEveryone,
         setSelectedUser,
         unseenMessages,
         setUnseenMessages
