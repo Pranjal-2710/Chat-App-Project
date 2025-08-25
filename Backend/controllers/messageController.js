@@ -41,7 +41,7 @@ export const getMessages= async(req,res)=>{
     try{
         const {id:selectedUserId}= req.params
         const myId= req.user._id;
-        const messages= await Message.find({
+        let messages= await Message.find({
             $or:[
                 {senderId:myId, receiverId:selectedUserId},
                 {senderId:selectedUserId,receiverId:myId}
@@ -49,6 +49,27 @@ export const getMessages= async(req,res)=>{
         })
 
         await Message.updateMany({senderId:selectedUserId, receiverId:myId},{seen:true})
+
+        // Filter out messages deleted for me
+        messages = messages.filter((msg)=>{
+            const deletedForMe = Array.isArray(msg.deletedFor) && msg.deletedFor.find((u)=> String(u)===String(myId))
+            return !deletedForMe
+        })
+
+        // Transform messages deleted for everyone to tombstones
+        messages = messages.map((msg)=>{
+            if(msg.deletedForEveryoneAt){
+                return {
+                    ...msg.toObject(),
+                    text: null,
+                    image: null,
+                    voice: null,
+                    video: null,
+                    isDeletedForEveryone: true
+                }
+            }
+            return msg
+        })
 
         res.json({
             success:true,
@@ -92,12 +113,16 @@ export const sendMessage = async(req,res)=>{
         const receiverId= req.params.id;
         const senderId= req.user._id;
         let imageUrl;
+        let imagePublicId;
         let voiceUrl;
+        let voicePublicId;
         let videoUrl;
+        let videoPublicId;
         
         if(image){
             const uploadResponse= await cloudinary.uploader.upload(image);
             imageUrl=uploadResponse.secure_url;
+            imagePublicId=uploadResponse.public_id;
         }
 
         if(voice){
@@ -107,6 +132,7 @@ export const sendMessage = async(req,res)=>{
                     format: "mp3" // Convert to mp3 for better compatibility
                 });
                 voiceUrl=uploadResponse.secure_url;
+                voicePublicId=uploadResponse.public_id;
             } catch (cloudinaryError) {
                 console.error('Cloudinary upload error:', cloudinaryError);
                 throw new Error('Failed to upload voice message');
@@ -120,6 +146,7 @@ export const sendMessage = async(req,res)=>{
                     format: "mp4" // Convert to mp4 for better compatibility
                 });
                 videoUrl=uploadResponse.secure_url;
+                videoPublicId=uploadResponse.public_id;
             } catch (cloudinaryError) {
                 console.error('Cloudinary video upload error:', cloudinaryError);
                 throw new Error('Failed to upload video message');
@@ -131,8 +158,11 @@ export const sendMessage = async(req,res)=>{
             receiverId,
             text,
             image: imageUrl,
+            imagePublicId,
             voice: voiceUrl,
-            video: videoUrl
+            voicePublicId,
+            video: videoUrl,
+            videoPublicId
         })
 
         //Emit new message to the receiver's socket
@@ -153,5 +183,86 @@ export const sendMessage = async(req,res)=>{
             success:false,
             message:error.message
         })
+    }
+}
+
+// Delete for me (soft delete for the requesting user)
+export const deleteMessageForMe = async(req,res)=>{
+    try{
+        const {id:messageId} = req.params
+        const myId = req.user._id
+        const message = await Message.findById(messageId)
+        if(!message){
+            return res.json({success:false, message:"Message not found"})
+        }
+        // Only participants can delete for me
+        if(String(message.senderId)!==String(myId) && String(message.receiverId)!==String(myId)){
+            return res.json({success:false, message:"Not allowed"})
+        }
+        const updated = await Message.findByIdAndUpdate(messageId, { $addToSet: { deletedFor: myId } }, { new: true })
+        return res.json({success:true, message:"Deleted for me"})
+    }catch(error){
+        console.log(error.message)
+        res.json({success:false, message:error.message})
+    }
+}
+
+// Delete for everyone (tombstone + Cloudinary cleanup)
+export const deleteMessageForEveryone = async(req,res)=>{
+    try{
+        const {id:messageId} = req.params
+        const myId = req.user._id
+        const message = await Message.findById(messageId)
+        if(!message){
+            return res.json({success:false, message:"Message not found"})
+        }
+        // Only sender can delete for everyone
+        if(String(message.senderId)!==String(myId)){
+            return res.json({success:false, message:"Only sender can delete for everyone"})
+        }
+
+        // Perform Cloudinary deletions if present
+        const deletions = []
+        if(message.imagePublicId){
+            deletions.push(cloudinary.uploader.destroy(message.imagePublicId, { resource_type: "image" }))
+        }
+        if(message.voicePublicId){
+            deletions.push(cloudinary.uploader.destroy(message.voicePublicId, { resource_type: "video" }))
+        }
+        if(message.videoPublicId){
+            deletions.push(cloudinary.uploader.destroy(message.videoPublicId, { resource_type: "video" }))
+        }
+        if(deletions.length){
+            try{ await Promise.all(deletions) }catch(e){ console.error("Cloudinary delete error", e) }
+        }
+
+        // Tombstone message
+        const updated = await Message.findByIdAndUpdate(messageId, {
+            deletedForEveryoneAt: new Date(),
+            text: null,
+            image: null,
+            imagePublicId: null,
+            voice: null,
+            voicePublicId: null,
+            video: null,
+            videoPublicId: null
+        }, { new: true })
+
+        // Notify receiver if online
+        const receiverId = String(message.receiverId)
+        const receiverSocketId= userSocketMap[receiverId]
+        if(receiverSocketId){
+            io.to(receiverSocketId).emit("messageDeletedForEveryone", { messageId })
+        }
+        // Also notify sender's other sessions
+        const senderSocketId = userSocketMap[String(myId)]
+        if(senderSocketId){
+            io.to(senderSocketId).emit("messageDeletedForEveryone", { messageId })
+        }
+
+        return res.json({success:true, message:"Deleted for everyone"})
+    }catch(error){
+        console.log(error.message)
+        res.json({success:false, message:error.message})
     }
 }

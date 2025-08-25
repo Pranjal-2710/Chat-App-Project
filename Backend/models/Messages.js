@@ -5,9 +5,16 @@ const messageSchema=new mongoose.Schema({
     receiverId:{type:mongoose.Schema.Types.ObjectId, ref:"User",required:true},
     text:{type:String},
     image:{type:String},
+    imagePublicId:{type:String},
     voice:{type:String},
+    voicePublicId:{type:String},
     video:{type:String},
-    seen:{type:Boolean, default:false}
+    videoPublicId:{type:String},
+    seen:{type:Boolean, default:false},
+    // Soft delete for everyone (tombstone)
+    deletedForEveryoneAt:{type:Date},
+    // Per-user soft delete list (delete for me)
+    deletedFor:[{type:mongoose.Schema.Types.ObjectId, ref:"User"}]
 
 },{timestamps:true})
 
