@@ -14,7 +14,10 @@ const messageSchema=new mongoose.Schema({
     // Soft delete for everyone (tombstone)
     deletedForEveryoneAt:{type:Date},
     // Per-user soft delete list (delete for me)
-    deletedFor:[{type:mongoose.Schema.Types.ObjectId, ref:"User"}]
+    deletedFor:[{type:mongoose.Schema.Types.ObjectId, ref:"User"}],
+    // Tombstone document to show "This message was deleted"
+    isTombstone:{type:Boolean, default:false},
+    originalMessageId:{type:mongoose.Schema.Types.ObjectId}
 
 },{timestamps:true})
 

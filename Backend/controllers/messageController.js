@@ -56,9 +56,9 @@ export const getMessages= async(req,res)=>{
             return !deletedForMe
         })
 
-        // Transform messages deleted for everyone to tombstones
+        // Transform messages to tombstone if flagged or is tombstone
         messages = messages.map((msg)=>{
-            if(msg.deletedForEveryoneAt){
+            if(msg.isTombstone || msg.deletedForEveryoneAt){
                 return {
                     ...msg.toObject(),
                     text: null,
@@ -236,31 +236,31 @@ export const deleteMessageForEveryone = async(req,res)=>{
             try{ await Promise.all(deletions) }catch(e){ console.error("Cloudinary delete error", e) }
         }
 
-        // Tombstone message
-        const updated = await Message.findByIdAndUpdate(messageId, {
-            deletedForEveryoneAt: new Date(),
-            text: null,
-            image: null,
-            imagePublicId: null,
-            voice: null,
-            voicePublicId: null,
-            video: null,
-            videoPublicId: null
-        }, { new: true })
+        // Create lightweight tombstone message
+        const tombstone = await Message.create({
+            senderId: message.senderId,
+            receiverId: message.receiverId,
+            isTombstone: true,
+            originalMessageId: message._id,
+            deletedForEveryoneAt: new Date()
+        })
+
+        // Remove original message permanently
+        await Message.findByIdAndDelete(messageId)
 
         // Notify receiver if online
         const receiverId = String(message.receiverId)
         const receiverSocketId= userSocketMap[receiverId]
         if(receiverSocketId){
-            io.to(receiverSocketId).emit("messageDeletedForEveryone", { messageId })
+            io.to(receiverSocketId).emit("messageDeletedForEveryone", { messageId, tombstone })
         }
         // Also notify sender's other sessions
         const senderSocketId = userSocketMap[String(myId)]
         if(senderSocketId){
-            io.to(senderSocketId).emit("messageDeletedForEveryone", { messageId })
+            io.to(senderSocketId).emit("messageDeletedForEveryone", { messageId, tombstone })
         }
 
-        return res.json({success:true, message:"Deleted for everyone"})
+        return res.json({success:true, message:"Deleted for everyone", tombstoneId: tombstone._id})
     }catch(error){
         console.log(error.message)
         res.json({success:false, message:error.message})
